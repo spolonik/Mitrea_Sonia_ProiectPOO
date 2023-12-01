@@ -60,7 +60,7 @@ public:
 	}
 
 	//op functie
-	float operator()() {
+	float operator()() const {
 		return this->pret * (*this->cantitate);
 	}
 
@@ -68,9 +68,6 @@ public:
 	bool operator!() {
 		return(this->pret == 0);
 	}
-
-
-
 
 	//op =
 	Produs& operator= (const Produs& p) {
@@ -97,7 +94,7 @@ public:
 	}
 
 	//getteri si setteri
-	string getNumeProdus() {
+	string getNumeProdus() const {
 		return this->nume;
 	}
 
@@ -105,7 +102,7 @@ public:
 		this->nume = nume;
 	}
 
-	float getPretProdus() {
+	float getPretProdus() const {
 		return this->pret;
 	}
 
@@ -113,7 +110,7 @@ public:
 		this->pret = pret;
 	}
 
-	int* getCantitate() {
+	int* getCantitate() const {
 		return this->cantitate;
 	}
 
@@ -142,8 +139,6 @@ public:
 	static float CalculeazaValoareTotala(float pret, int cantitate) {
 		return pret * cantitate;
 	}
-
-	friend void ProcesareProdus(const Produs& produs);
 
 
 	friend ostream& operator<<(ostream& out, const Produs& p) {
@@ -176,21 +171,23 @@ public:
 	}
 	//op ++ post-increm
 	Produs operator++(int) {
-		Produs temp(*this);
+		Produs aux(*this);
 		++(*this->cantitate);
-		return temp;
+		return aux;
 	}
 	//op -- pre-decrem
 	Produs& operator--() {
-		--(*this->cantitate);
+		if (*cantitate > 0) {
+			--(*cantitate);
+		}
 		return *this;
 	}
 
 	//op -- post-decrem
 	Produs operator--(int) {
-		Produs temp(*this);
+		Produs aux(*this);
 		--(*this->cantitate);
-		return temp;
+		return aux;
 	}
 
 	//compar doua produse, si daca au acelasi cod de bare => returneaza true
@@ -211,8 +208,20 @@ public:
 		}
 		return *this;
 	}
+
+	friend void ProcesareProdus(const Produs& produs);
+	friend void AltaFunctiePrietena(const Produs& p1, const Produs& p2);
 };
 int Produs::nrProduseInStoc = 0;
+
+void ProcesareProdus(const Produs& produs) {
+	cout << "Procesare Produs: " << produs.getNumeProdus() << " cu pretul: " << produs.getPretProdus() << endl;
+}
+void AltaFunctiePrietena(const Produs& p1, const Produs& p2) {
+	cout << "Valoarea totala a produsului 1: " << p1() << endl;
+	cout << "Valoarea totala a produsului 2: " << p2() << endl;
+}
+
 
 class Raion {
 private:
@@ -288,7 +297,7 @@ public:
 		return venitTotal / nrLuni;
 	}
 
-	string getNumeRaion() {
+	string getNumeRaion() const {
 		return this->numeRaion;
 	}
 
@@ -296,7 +305,7 @@ public:
 		this->numeRaion = numeRaion;
 	}
 
-	int getCapacitate() {
+	int getCapacitate() const {
 		return this->capacitate;
 	}
 
@@ -304,7 +313,7 @@ public:
 		this->capacitate = capacitate;
 	}
 
-	float* getVenitLunar() {
+	float* getVenitLunar() const {
 		return this->venitLunar;
 	}
 
@@ -360,9 +369,9 @@ public:
 
 	//post-increm
 	Raion operator++(int) {
-		Raion temp(*this);
+		Raion aux(*this);
 		nrRaioaneActive++;
-		return temp;
+		return aux;
 	}
 
 	//pre-increm 
@@ -373,9 +382,9 @@ public:
 
 	//post-decrem 
 	Raion operator--(int) {
-		Raion temp(*this);
+		Raion aux(*this);
 		nrRaioaneActive--;
-		return temp;
+		return aux;
 	}
 
 	//pre-decrem 
@@ -398,13 +407,13 @@ private:
 	const string tipClient;
 
 public:
-	string getNumeClient() {
+	string getNumeClient() const {
 		return this->numeClient;
 	}
-	int getVarsta() {
+	int getVarsta() const {
 		return this->varsta;
 	}
-	bool* getEsteFidel() {
+	bool* getEsteFidel() const {
 		return this->esteFidel;
 	}
 	void setNumeClient(string numeClient) {
@@ -517,9 +526,9 @@ public:
 
 	//postincrem
 	Client operator++(int) {
-		Client temp(*this);
+		Client aux(*this);
 		nrClientiFideli++;
-		return temp;
+		return aux;
 	}
 
 	//preincrem
@@ -530,9 +539,9 @@ public:
 
 	//postdecrem 
 	Client operator--(int) {
-		Client temp(*this);
+		Client aux(*this);
 		nrClientiFideli--;
-		return temp;
+		return aux;
 	}
 
 	//predecrem 
@@ -549,16 +558,13 @@ class Produs;
 class Raion;
 class Client;
 
-//void ProcesareProdus(const Produs& produs) {
-//	cout << "Procesare Produs: " << produs.getNumeProdus() << " cu pretul: " << produs.getPretProdus() << endl;
-//}
-//void ProcesareRaion(const Raion& raion) {
-//	cout << "Procesare Raion: " << raion.getNumeRaion() << " cu capacitatea: " << raion.getCapacitate() << endl;
-//}
-//void ProcesareClient(const Client& client) {
-//	cout << "Procesare Client: " << client.getNumeClient() << " cu varsta: " << client.getVarsta() << endl;
-//}
 
+void ProcesareRaion(const Raion& raion) {
+	cout << "Procesare Raion: " << raion.getNumeRaion() << " cu capacitatea: " << raion.getCapacitate() << endl;
+}
+void ProcesareClient(const Client& client) {
+	cout << "Procesare Client: " << client.getNumeClient() << " cu varsta: " << client.getVarsta() << endl;
+}
 
 
 
@@ -581,28 +587,81 @@ int main()
 	p3.afisareProdus();
 	cout << "---------------------------------------------" << endl;
 
+	cout << "Nume produs1: " << p3.getNumeProdus() << endl;
+	cout << "Pret produs1: " << p3.getPretProdus() << endl;
+	cout << "Cantitate produs1: " << *p3.getCantitate() << endl;
 
+	cout << "Op <<" << endl;
+	cout << p1 << endl;
 
-	//float valoareTotalaP3 = Produs::CalculeazaValoareTotala(p3.pret, *p3.cantitate);
-	//cout << "Valoare totala pentru produsul P3: " << valoareTotalaP3 << endl;
+	p2.afisareProdus();
+	cout << "Op +=" << endl;
+	p2 += 5;
+	cout << p2 << endl;
+	cout << "-------------------------" << endl;
+	cout << "P1 inainte: " << endl << p1 << endl;
+	p1 = p3;
+	cout << "P1 dupa op = : " << endl << p1 << endl;
+	cout << "-------------------------" << endl;
+	cout << p3 << endl;
+	p3++;
+	cout << p3 << endl;
 
-	//cout << endl << endl << "------------" << endl;
-	//Raion r1;
-	//cout << "---------------------------------------------" << endl;
-	//r1.AfisareRaion();
-	//cout << "---------------------------------------------" << endl;
+	Raion r1;
+	cout << "---------------------------------------------" << endl;
+	r1.AfisareRaion();
+	cout << "---------------------------------------------" << endl;
 
-	//Raion r2("Electronice", 100);
-	//cout << "---------------------------------------------" << endl;
-	//r2.AfisareRaion();
-	//cout << "---------------------------------------------" << endl;
+	Raion r2("Electronice", 100);
+	cout << "---------------------------------------------" << endl;
+	r2.AfisareRaion();
+	cout << "---------------------------------------------" << endl;
 
-	/*float venitLunar[] = { 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000 };
+	float venitLunar[] = { 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000 };
 	Raion r3("Haine", 200, venitLunar, "Vestimentar");
+	cout << "---------------------------------------------" << endl;
 	r3.AfisareRaion();
 	cout << "---------------------------------------------" << endl;
 
-	cout << endl << endl << "------------" << endl;
+	// Testare getteri si setteri pentru Raion
+	cout << "Nume Raion r1: " << r1.getNumeRaion() << endl;
+	cout << "Capacitate Raion r1: " << r1.getCapacitate() << endl;
+	cout << "Venit Lunar Raion r1: ";
+	for (int i = 0; i < 12; i++) {
+		cout << r1.getVenitLunar()[i] << " ";
+	}
+	cout << endl;
+
+	r1.setNumeRaion("Raion Nou");
+	r1.setCapacitate(150);
+	float venitLunarNou[] = { 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000 };
+	r1.setVenitLunar(venitLunarNou);
+
+	cout << "Nume Raion r1 dupa set: " << r1.getNumeRaion() << endl;
+	cout << "Capacitate Raion r1 dupa set: " << r1.getCapacitate() << endl;
+	cout << "Venit Lunar Raion r1 dupa set: ";
+	for (int i = 0; i < 12; i++) {
+		cout << r1.getVenitLunar()[i] << " ";
+	}
+	cout << endl;
+
+	// Testare constructor de copiere pentru Raion
+	Raion r4 = r2;
+	cout << "---------------------------------------------" << endl;
+	cout << "Afisare Raion r2 (original): " << endl;
+	r2.AfisareRaion();
+	cout << "Afisare Raion r4 (copie): " << endl;
+	r4.AfisareRaion();
+	cout << "---------------------------------------------" << endl;
+
+	// Testare destructor pentru Raion
+	{
+		Raion r5("Test Destructor", 50);
+		cout << "Raion creat in bloc" << endl;
+	}
+
+	cout << "Raion dupa iesirea din bloc" << endl;
+
 	Client c1;
 	cout << "---------------------------------------------" << endl;
 	c1.AfisareClient();
@@ -615,24 +674,45 @@ int main()
 
 	bool* esteFidel = new bool(true);
 	Client c3("Alice Wonderland", 25, esteFidel, "VIP");
+	cout << "---------------------------------------------" << endl;
 	c3.AfisareClient();
 	cout << "---------------------------------------------" << endl;
 
-	Produs prodExe;
-	Raion raionExe;
-	Client clientExe;
+	// Testare getteri si setteri pentru Client
+	cout << "Nume Client c1: " << c1.getNumeClient() << endl;
+	cout << "Varsta Client c1: " << c1.getVarsta() << endl;
+	cout << "Este Fidel Client c1: " << (*c1.getEsteFidel() ? "Da" : "Nu") << endl;
 
-	ProcesareProdus(prodExe);
-	ProcesareRaion(raionExe);
-	ProcesareClient(clientExe);*/
+	c1.setNumeClient("Client Nou");
+	c1.setVarsta(40);
+	bool* esteFidelNou = new bool(false);
+	c1.setEsteFidel(esteFidelNou);
 
+	cout << "Nume Client c1 dupa set: " << c1.getNumeClient() << endl;
+	cout << "Varsta Client c1 dupa set: " << c1.getVarsta() << endl;
+	cout << "Este Fidel Client c1 dupa set: " << (*c1.getEsteFidel() ? "Da" : "Nu") << endl;
 
-	Raion r1;
+	// Testare constructor de copiere pentru Client
+	Client c4 = c2;
+	cout << "---------------------------------------------" << endl;
+	cout << "Afisare Client c2 (original): " << endl;
+	c2.AfisareClient();
+	cout << "Afisare Client c4 (copie): " << endl;
+	c4.AfisareClient();
+	cout << "---------------------------------------------" << endl;
 
-	cout << "Op <<" << endl;
-	cout << p1 << endl;
-	cout << "Op <<" << endl;
-	cout << r1 << endl;
+	// Testare destructor pentru Client
+	{
+		Client c5("Test Destructor", 30);
+		cout << "Client creat in blocul interior" << endl;
+	}
+
+	cout << "Client dupa iesirea din blocul interior" << endl;
+
+	ProcesareProdus(p1);
+	ProcesareRaion(r1);
+	ProcesareClient(c1);
 
 	return 0;
 }
+
