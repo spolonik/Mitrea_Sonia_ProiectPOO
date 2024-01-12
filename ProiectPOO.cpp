@@ -5,8 +5,18 @@
 
 using namespace std;
 
-class Produs {
-private:
+class EvidentaTipProdus {
+public:
+	virtual string evidentaTipProdus() = 0;
+};
+
+class RecunoastereTipClient {
+public:
+	virtual string evidentaTipClient() = 0;
+};
+
+class Produs : public EvidentaTipProdus {
+protected:
 	string nume;
 	float pret;
 	int* cantitate;
@@ -211,6 +221,10 @@ public:
 
 	friend void ProcesareProdus(const Produs& produs);
 	friend void AltaFunctiePrietena(const Produs& p1, const Produs& p2);
+
+	string evidentaTipProdus() {
+		return "Produs neperisabil";
+	}
 };
 int Produs::nrProduseInStoc = 0;
 
@@ -352,6 +366,19 @@ public:
 		return out;
 	}
 
+	friend istream& operator>>(istream& input, Raion& r) {
+		cout << "Introdu numeRaion: ";
+		input >> r.numeRaion;
+		cout << "Introdu capacitate: ";
+		input >> r.capacitate;
+		r.venitLunar = new float[r.capacitate];
+		for (int i = 0; i < r.capacitate; ++i) {
+			cout << "Introdu venitLunar[" << i << "]: ";
+			input >> r.venitLunar[i];
+		}
+		return input;
+	}
+
 	float& operator[](int index) {
 		if (index >= 0 && index < capacitate) {
 			return venitLunar[index];
@@ -398,8 +425,8 @@ public:
 };
 int Raion::nrRaioaneActive = 0;
 
-class Client {
-private:
+class Client : public RecunoastereTipClient {
+protected:
 	string numeClient;
 	int varsta;
 	bool* esteFidel;
@@ -524,6 +551,10 @@ public:
 		return !(*esteFidel);
 	}
 
+	string evidentaTipClient() {
+		return "Client obisnuit!";
+	}
+
 	//postincrem
 	Client operator++(int) {
 		Client aux(*this);
@@ -551,6 +582,8 @@ public:
 	}
 
 	friend void ProcesareClient(const Client& client);
+
+
 };
 int Client::nrClientiFideli = 0;
 
@@ -566,6 +599,277 @@ void ProcesareClient(const Client& client) {
 	cout << "Procesare Client: " << client.getNumeClient() << " cu varsta: " << client.getVarsta() << endl;
 }
 
+
+
+class ProdusPerisabil : public Produs {
+	int ziExp;
+	int lunaExp;
+	int anExp;
+public:
+
+	ProdusPerisabil() :Produs()
+	{
+		this->ziExp = 1;
+		this->lunaExp = 1;
+		this->anExp = 2024;
+	}
+
+	ProdusPerisabil(string nume, float pret, int* cantitate, const int cod, int zi, int luna, int an) :Produs(nume, pret, cantitate, cod)
+	{
+		this->ziExp = zi;
+		this->lunaExp = luna;
+		this->anExp = an;
+	}
+
+	ProdusPerisabil(const Produs& p) :Produs(p) {
+		this->ziExp = 10;
+		this->lunaExp = 5;
+		this->anExp = 2026;
+	}
+
+	ProdusPerisabil(const ProdusPerisabil& p) :Produs(p) {
+		this->ziExp = p.ziExp;
+		this->lunaExp = p.lunaExp;
+		this->anExp = p.anExp;
+	}
+
+	~ProdusPerisabil() {
+
+	}
+
+	ProdusPerisabil& operator=(const ProdusPerisabil& p) {
+		if (this != &p) {
+			Produs::operator=(p);
+			this->ziExp = p.ziExp;
+			this->lunaExp = p.lunaExp;
+			this->anExp = p.anExp;
+		}
+		return *this;
+	}
+
+	friend ostream& operator<<(ostream& out, const ProdusPerisabil& pp) {
+		out << (Produs&)pp << endl;
+		out << "Zi Expirare: " << pp.ziExp << endl << endl;
+		out << "Luna Expirare: " << pp.lunaExp << endl << endl;
+		out << "An Expirare: " << pp.anExp << endl << endl;
+
+		return out;
+	}
+
+	int getZiExp() {
+		return ziExp;
+	}
+
+	void setZiExp(int ziExp) {
+		this->ziExp = ziExp;
+	}
+
+	int getLunaExp() {
+		return lunaExp;
+	}
+
+	void setLunaExp(int lunaExp) {
+		this->lunaExp = lunaExp;
+	}
+
+	int getAnExp() {
+		return anExp;
+	}
+
+	void setAnExp(int anExp) {
+		this->anExp = anExp;
+	}
+
+	string evidentaTipProdus() {
+		string dataExpirare = to_string(ziExp) + "." + to_string(lunaExp) + "." + to_string(anExp);
+		return "Produs perisabil! Expira la data " + dataExpirare;
+	}
+};
+
+
+class ClientVIP : public Client {
+	int nivelVIP;
+	float discountSuma;
+public:
+	ClientVIP() :Client() {
+		this->nivelVIP = 1;
+		this->discountSuma = 10.5;
+	}
+
+	ClientVIP(string numeClient, int varsta, bool* esteFidel, const string tipC, int nivelVIP, float discountSuma) :Client(numeClient, varsta, esteFidel, tipC) {
+		this->nivelVIP = nivelVIP;
+		this->discountSuma = discountSuma;
+	}
+
+
+	ClientVIP(const ClientVIP& c) :Client(c) {
+		this->nivelVIP = c.nivelVIP;
+		this->discountSuma = c.discountSuma;
+	}
+
+	ClientVIP(const Client& c) :Client(c) {
+		this->nivelVIP = 4;
+		this->discountSuma = 25.5;
+	}
+
+	~ClientVIP() {
+
+	}
+
+	ClientVIP& operator=(const ClientVIP& c) {
+		if (this != &c) {
+			Client::operator=(c);
+			this->nivelVIP = c.nivelVIP;
+			this->discountSuma = c.discountSuma;
+		}
+		return *this;
+	}
+
+	friend ostream& operator <<(ostream& out, const ClientVIP& c) {
+		out << (Client&)c;
+		out << "Nivel VIP: " << c.nivelVIP << endl;
+		out << "Discount Suma(In procente): " << c.discountSuma << endl;
+		return out;
+	}
+
+	int getNivelVIP() {
+		return nivelVIP;
+	}
+
+	void setNivelVIP(int nivel) {
+		nivelVIP = nivel;
+	}
+
+	float getDiscountSuma() {
+		return discountSuma;
+	}
+
+	void setDiscountSuma(float discount) {
+		discountSuma = discount;
+	}
+
+	string evidentaTipClient() {
+		return "Client VIP! Nivelul VIP este " + to_string(nivelVIP);
+	}
+};
+
+
+class Depozit {
+	string localitate;
+	int nrProduse;
+	Produs** prod;
+	float suprafata;
+public:
+	Depozit() {
+		this->localitate = "Necunoscut";
+		this->nrProduse = 0;
+		this->prod = NULL;
+		this->suprafata = 0;
+	}
+
+	Depozit(string localitate, int nrProduse, Produs** prod, float suprafata) {
+		this->localitate = localitate;
+		this->nrProduse = nrProduse;
+		this->prod = new Produs * [this->nrProduse];
+		for (int i = 0; i < this->nrProduse; i++) {
+			this->prod[i] = prod[i];
+		}
+		this->suprafata = suprafata;
+	}
+
+	Depozit(const Depozit& d) {
+		this->localitate = d.localitate;
+		this->nrProduse = d.nrProduse;
+		this->prod = new Produs * [this->nrProduse];
+		for (int i = 0; i < this->nrProduse; i++) {
+			this->prod[i] = d.prod[i];
+		}
+		this->suprafata = d.suprafata;
+	}
+
+	~Depozit() {
+		if (this->prod != NULL) {
+			delete[]this->prod;
+		}
+	}
+
+	Depozit& operator =(const Depozit& d) {
+		if (this != &d) {
+			if (this->prod != NULL) {
+				delete[]this->prod;
+			}
+			this->localitate = d.localitate;
+			this->nrProduse = d.nrProduse;
+			this->prod = new Produs * [this->nrProduse];
+			for (int i = 0; i < this->nrProduse; i++) {
+				this->prod[i] = d.prod[i];
+			}
+			this->suprafata = d.suprafata;
+		}
+		return *this;
+	}
+
+	Depozit& operator+=(float adaugaSuprafata) {
+		if (adaugaSuprafata > 0) {
+			this->suprafata += adaugaSuprafata;
+		}
+		return *this;
+	}
+
+	Produs& operator[](int index) {
+		if (index >= 0 && index < nrProduse) {
+			return *prod[index];
+		}
+		else {
+			Produs* p = new Produs();
+			return *p;
+		}
+
+	}
+
+	string operator()()
+	{
+		return "Depozitul se afla in " + this->localitate;
+	}
+
+	string getLocalitate() {
+		return localitate;
+	}
+
+	void setLocalitate(string loc) {
+		localitate = loc;
+	}
+
+	int getNrProduse() {
+		return nrProduse;
+	}
+
+	float getSuprafata() {
+		return suprafata;
+	}
+
+	void setSuprafata(float sup) {
+		suprafata = sup;
+	}
+
+	Produs** getProduse() {
+		return prod;
+	}
+
+	friend ostream& operator<<(ostream& out, const Depozit& d) {
+		out << "Localitate: " << d.localitate << endl;
+		out << "Numar produse: " << d.nrProduse << endl;
+		if (d.nrProduse > 0) {
+			out << "Produse: " << endl;
+			for (int i = 0; i < d.nrProduse; ++i) {
+				out << *d.prod[i] << endl;
+			}
+		}
+		out << "-------------------------------------" << endl;
+		out << "Suprafata: " << d.suprafata << " mp" << endl;
+		return out;
+	}
+};
 
 
 int main()
@@ -713,54 +1017,178 @@ int main()
 	ProcesareRaion(r1);
 	ProcesareClient(c1);
 
-	int nrObj = 3;
-	Produs vProduse[nrObj]; //vector de obj de tipul clasei Produs
+	cout << endl;
 
-	for (int i = 0; i < nrObj; i++) {
-		cout << "Introdu informatiile pentru Produsul: " << i + 1<< ":\n";
-		cin >> vProduse[i];
-	}
-	cout << "Afisare produse:\n";
-	for (v<Produs>::iterator it = vProduse.begin(); it != vProduse.end(); ++it) {
-		cout << *it << \n; //acceseaza obiectul care indica iteratorul ce parcurge vectorul 
-	}
+	Produs produse[3] = { p1,p2,p3 };
+	Raion raioane[3] = { r1,r2,r3 };
+	Client clienti[3] = { c1,c2,c3 };
 
 
-	Raion vRaioane[nrObj];
-
-	for (int i = 0; i < nrObj; i++) {
-		cout << "Introdu informatiile pentru Raionul: " << i + 1 << ":\n";
-		cin >> vRaioane[i];
-	}
-	cout << "Afisare raioane:\n";
-	for (v<Raion>::iterator it = vRaioane.begin(); it != vRaioane.end(); ++it) {
-		cout << *it << \n; //acceseaza obiectul care indica iteratorul ce parcurge vectorul 
+	for (int i = 0; i < 3; i++) {
+		//cin >> produse[i];
 	}
 
-
-
-	for (int i = 0; i < nrObj; i++) {
-		cout << "Introdu informatiile pentru Clientul: " << i + 1 << ":\n";
-		cin >> vClienti[i];
+	cout << endl << endl;
+	for (int i = 0; i < 3; i++) {
+		cout << produse[i] << endl;
 	}
-	cout << "Afisare raioane:\n";
-	for (v<Client>::iterator it = vClienti.begin(); it != vClienti.end(); ++it) {
-		cout << *it << \n; //acceseaza obiectul care indica iteratorul ce parcurge vectorul 
+
+	for (int i = 0; i < 3; i++) {
+		//cin >> raioane[i];
+	}
+
+	cout << endl << endl;
+	for (int i = 0; i < 3; i++) {
+		cout << raioane[i] << endl;
 	}
 
 
-	int nrLinii = 2;
-	int nrColoane = 2;
-	Produs matriceProds[nrLinii][nrColoane];
+	cout << endl << endl;
 
-	cout << "Afisare Matrice: \n";
-	for (int i = 0; i < nrLinii; i++) {
-		for (int j = 0; j < nrColoane; j++) {
-			cout << matriceProds[i][j] << endl;
+	for (int i = 0; i < 3; i++) {
+		//cin >> clienti[i];
+	}
+
+	cout << endl << endl;
+	for (int i = 0; i < 3; i++) {
+		cout << clienti[i] << endl;
+	}
+
+
+
+	cout << "---------------------------------------------" << endl;
+	const int nr = 2;
+	Produs matrixProd[nr][nr];
+	for (int i = 0; i < nr; ++i) {
+		for (int j = 0; j < nr; ++j) {
+			//cin >> matrixProd[i][j];
 		}
 	}
 
+	for (int i = 0; i < nr; ++i) {
+		for (int j = 0; j < nr; ++j) {
+			cout << matrixProd[i][j] << endl;
+		}
+	}
+	cout << "---------------------------------------------" << endl;
+
+	ProdusPerisabil pp;
+	cout << pp.getZiExp() << endl;
+	cout << pp.getLunaExp() << endl;
+	cout << pp.getAnExp() << endl;
+	cout << endl;
+
+	pp.setZiExp(5);
+	pp.setLunaExp(11);
+	pp.setAnExp(2025);
+
+	cout << pp << endl;
+
+	cout << endl;
+
+	ProdusPerisabil pp1 = p1;
+	cout << pp1 << endl;
+
+	ProdusPerisabil pp2 = pp;
+	cout << pp2 << endl;
+
+	pp2 = pp1;
+
+	cout << pp2 << endl;
+
+	Produs pCasting = pp1;
+
+	cout << pCasting << endl;
+
+	cout << "---------------------------------------------" << endl;
+	ClientVIP cv;
+	cout << cv.getNivelVIP() << endl;
+	cout << cv.getDiscountSuma() << endl;
+	cv.setDiscountSuma(15.5);
+	cv.setNivelVIP(3);
+
+	cout << cv << endl;
+
+	ClientVIP cv1 = c1;
+
+	cout << cv1 << endl;
+
+	ClientVIP cv2 = cv;
+
+	cout << cv2 << endl;
+
+	cv2 = cv1;
+
+	cout << cv2 << endl;
+
+	cout << "---------------------------------------------" << endl;
+	Produs* vecPp[10] = { &p1,&pp1,&p1,&pp1, &p1,&pp1, &p1,&pp1, &p1,&pp1 };
+	Produs* pProd = new Produs(p1);
+	Produs* pProd1 = new ProdusPerisabil(pp1);
+	cout << pProd->evidentaTipProdus() << endl;
+	cout << pProd1->evidentaTipProdus() << endl;
+	for (int i = 0; i < 10; i++) {
+		cout << vecPp[i]->evidentaTipProdus() << endl;
+	}
+
+	cout << endl << endl;
+
+	Client* pClient = new Client(c1);
+	Client* pClient1 = new ClientVIP(cv1);
+
+	cout << pClient->evidentaTipClient() << endl;
+	cout << pClient1->evidentaTipClient() << endl;
+
+	cout << "---------------------------------------------" << endl;
+
+	Produs* vecProd[4] = { &p1,&pp1,&pp2,&p2 };
+
+	Depozit d;
+	cout << d.getLocalitate() << endl;
+	cout << d.getNrProduse() << endl;
+	if (d.getNrProduse() > 0) {
+		for (int i = 0; i < d.getNrProduse(); i++)
+		{
+			cout << *(d.getProduse()[i]) << endl;
+		}
+	}
+	cout << d.getSuprafata() << endl;
+
+	d.setLocalitate("Pantelimon");
+	d.setSuprafata(4500);
+
+	cout << d << endl;
+
+
+	cout << endl << endl;
+
+	Depozit d1("Straulesti", 4, vecProd, 1500);
+
+	cout << d1 << endl;
+
+
+	Depozit d2 = d;
+	cout << d2 << endl;
+
+	d2 = d1;
+	cout << d2 << endl;
+
+	cout << d2() << endl;
+
+	d2 += 1500;
+
+	cout << d2 << endl;
+
+	cout << d2[2] << endl;
+	cout << d2[1] << endl;
+	cout << d2[-1] << endl;
+	cout << d2[11] << endl << endl;
+
+	for (int i = 0; i < d2.getNrProduse(); i++) {
+		cout << d2.getProduse()[i]->evidentaTipProdus() << endl;
+	}
+
+	cout << "---------------------------------------------" << endl;
 
 	return 0;
 }
-
