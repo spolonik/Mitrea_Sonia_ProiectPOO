@@ -383,7 +383,7 @@ public:
 		if (index >= 0 && index < capacitate) {
 			return venitLunar[index];
 		}
-		throw out_of_range("Indexul este în afara limitelor");
+		throw out_of_range("Indexul este Ã®n afara limitelor");
 	}
 
 	float operator()() const {
