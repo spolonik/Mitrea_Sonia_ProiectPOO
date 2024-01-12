@@ -713,6 +713,54 @@ int main()
 	ProcesareRaion(r1);
 	ProcesareClient(c1);
 
+	int nrObj = 3;
+	Produs vProduse[nrObj]; //vector de obj de tipul clasei Produs
+
+	for (int i = 0; i < nrObj; i++) {
+		cout << "Introdu informatiile pentru Produsul: " << i + 1<< ":\n";
+		cin >> vProduse[i];
+	}
+	cout << "Afisare produse:\n";
+	for (v<Produs>::iterator it = vProduse.begin(); it != vProduse.end(); ++it) {
+		cout << *it << \n; //acceseaza obiectul care indica iteratorul ce parcurge vectorul 
+	}
+
+
+	Raion vRaioane[nrObj];
+
+	for (int i = 0; i < nrObj; i++) {
+		cout << "Introdu informatiile pentru Raionul: " << i + 1 << ":\n";
+		cin >> vRaioane[i];
+	}
+	cout << "Afisare raioane:\n";
+	for (v<Raion>::iterator it = vRaioane.begin(); it != vRaioane.end(); ++it) {
+		cout << *it << \n; //acceseaza obiectul care indica iteratorul ce parcurge vectorul 
+	}
+
+
+
+	for (int i = 0; i < nrObj; i++) {
+		cout << "Introdu informatiile pentru Clientul: " << i + 1 << ":\n";
+		cin >> vClienti[i];
+	}
+	cout << "Afisare raioane:\n";
+	for (v<Client>::iterator it = vClienti.begin(); it != vClienti.end(); ++it) {
+		cout << *it << \n; //acceseaza obiectul care indica iteratorul ce parcurge vectorul 
+	}
+
+
+	int nrLinii = 2;
+	int nrColoane = 2;
+	Produs matriceProds[nrLinii][nrColoane];
+
+	cout << "Afisare Matrice: \n";
+	for (int i = 0; i < nrLinii; i++) {
+		for (int j = 0; j < nrColoane; j++) {
+			cout << matriceProds[i][j] << endl;
+		}
+	}
+
+
 	return 0;
 }
 
