@@ -178,35 +178,41 @@ public:
 		return in;
 	}
 
+	friend ofstream& operator<<(ofstream& out, const Produs& p) {
+		out << "\n" << p.nume << endl;
+		out << "\n" << p.pret << endl;
+		out << "\n" << *p.cantitate << endl;
+		return out;
+	}
 
-	////Fisiere binare 
-	//friend ofstream& operator<<(ofstream& out, const Produs& p) {
-	//	out.write((char*)&p.codBare, sizeof(int));
-	//	int nameSize = p.nume.size();
-	//	out.write((char*)&nameSize, sizeof(int));
-	//	out.write(p.nume.c_str(), nameSize);
-	//	out.write((char*)&p.pret, sizeof(float));
-	//	out.write((char*)p.cantitate, sizeof(int));
-	//	out.write((char*)&p.nrProduseInStoc, sizeof(int));
-	//	return out;
-	//}
+	friend ifstream& operator>>(ifstream& in, Produs& p) {
+		in >> p.nume;
+		in >> p.pret;
+		if (p.cantitate != nullptr) {
+			delete p.cantitate;
+			p.cantitate = nullptr;
+		}
+		p.cantitate = new int;
+		in >> *(p.cantitate);
+		return in;
+	}
 
-	//friend ifstream& operator>>(ifstream& in, Produs& p) {
-	//	in.read((char*)&p.codBare, sizeof(int));
-	//	int nameSize = 0;
-	//	in.read((char*)&nameSize, sizeof(int));
-	//	char* nameBuffer = new char[nameSize + 1];
-	//	in.read(nameBuffer, nameSize);
-	//	nameBuffer[nameSize] = '\0';
-	//	p.nume = nameBuffer;
-	//	delete[] nameBuffer;
-	//	in.read((char*)&p.pret, sizeof(float));
-	//	in.read((char*)p.cantitate, sizeof(int));
-	//	in.read((char*)&p.nrProduseInStoc, sizeof(int));
-	//	return in;
+	void serializare(ofstream& g) {
+		int dimensiuneNumeProdus = this->nume.size();
+		g.write((char*)&dimensiuneNumeProdus, sizeof(dimensiuneNumeProdus));
+		g.write(this->nume.c_str(), dimensiuneNumeProdus + 1);
+		g.write((char*)&this->cantitate, sizeof(this->cantitate));
+	}
 
-	//}
-
+	void deserializare(ifstream& g) {
+		int dimensiuneNumeProdus;
+		g.read((char*)&dimensiuneNumeProdus, sizeof(dimensiuneNumeProdus));
+		char* bufferNumeProdus = new char[dimensiuneNumeProdus + 1];
+		g.read(bufferNumeProdus, dimensiuneNumeProdus + 1);
+		this->nume = bufferNumeProdus;
+		delete[] bufferNumeProdus;
+		g.read((char*)&this->cantitate, sizeof(this->cantitate));
+	}
 
 
 	//op ++ pre-increm
@@ -419,6 +425,28 @@ public:
 		return input;
 	}
 
+	friend ofstream& operator<< (ofstream& out, const Raion& r) {
+		out << r.numeRaion << endl;
+		out << r.capacitate << endl;
+		for (int i = 0; i < r.nrRaioaneActive; i++) {
+			out << r.venitLunar[i] << " ";
+		}
+		out << endl;
+		return out;
+	}
+
+	friend ifstream& operator>>(ifstream& input, Raion& r) {
+		input >> r.numeRaion;
+		input >> r.capacitate;
+		delete[] r.venitLunar;
+		r.venitLunar = new float[r.capacitate];
+		for (int i = 0; i < r.capacitate; ++i) {
+			cout << i << " ";
+			input >> r.venitLunar[i];
+		}
+		return input;
+	}
+
 	float& operator[](int index) {
 		if (index >= 0 && index < capacitate) {
 			return venitLunar[index];
@@ -575,6 +603,51 @@ public:
 
 		return in;
 	}
+
+	//fisiere binare
+	//serializarea= procesul de transformare a unui obj intr o secventa de biti
+	void serializare(string numeFisier) {
+		ofstream f(numeFisier, ios::out | ios::binary);
+		int dimensiuneNumeClient = this->numeClient.size();
+		f.write((char*)&dimensiuneNumeClient, sizeof(dimensiuneNumeClient));
+		f.write(this->numeClient.c_str(), dimensiuneNumeClient + 1);
+		//c_str() = fct ce transforma un string intr un const char* (adc ii adauga terminator la final)
+		f.write((char*)&this->varsta, sizeof(this->varsta));
+		for (int i = 0; i < this->nrClientiFideli; i++) {
+			f.write((char*)&this->esteFidel[i], sizeof(this->esteFidel[i]));
+		}
+		f.close();
+
+	}
+	//deserializare = restaurare a unui obiect dintr-o secvență de biți
+	void deserializare(string numeFisier) {
+		ifstream f(numeFisier, ios::in | ios::binary);
+
+		if (f.is_open()) {
+			int dimensiuneNumeClient;
+			f.read((char*)&dimensiuneNumeClient, sizeof(dimensiuneNumeClient));
+
+			char* bufferNumeClient = new char[dimensiuneNumeClient + 1];
+			f.read(bufferNumeClient, dimensiuneNumeClient + 1);
+			this->numeClient = bufferNumeClient;
+			delete[] bufferNumeClient;
+
+			f.read((char*)&this->varsta, sizeof(this->varsta));
+			f.read((char*)&this->nrClientiFideli, sizeof(this->nrClientiFideli));
+			delete[] this->esteFidel;
+			this->esteFidel = new bool[this->nrClientiFideli];
+			for (int i = 0; i < this->nrClientiFideli; i++) {
+				f.read((char*)&this->esteFidel[i], sizeof(this->esteFidel[i]));
+			}
+
+			f.close();
+		}
+		else {
+			cout << "Fisierul cautat nu exista!" << endl;
+		}
+	}
+
+
 
 	bool operator[](int index) const {
 		if (index == 0) {
@@ -910,371 +983,489 @@ public:
 		return out;
 		out << "-------------------------------------" << endl;
 	}
+
+	//fisiere binare 
+
+	void serializare(string numeFisier) {
+		ofstream g(numeFisier, ios::out | ios::binary);
+		int dimensiuneLocalitate = this->localitate.size();
+		g.write((char*)&dimensiuneLocalitate, sizeof(dimensiuneLocalitate));
+		g.write(this->localitate.c_str(), dimensiuneLocalitate + 1);
+		g.write((char*)&this->nrProduse, sizeof(this->nrProduse));
+		for (int i = 0; i < this->nrProduse; i++) {
+			this->prod[i]->serializare(g);
+		}
+		g.write((char*)&this->suprafata, sizeof(this->suprafata));
+		g.close();
+	}
+
+
+	void deserializare(string numeFisier) {
+		ifstream g(numeFisier, ios::in | ios::binary);
+
+		if (g.is_open()) {
+			int dimensiuneLocalitate;
+			g.read((char*)&dimensiuneLocalitate, sizeof(dimensiuneLocalitate));
+
+			char* bufferLocalitate = new char[dimensiuneLocalitate + 1];
+			g.read(bufferLocalitate, dimensiuneLocalitate + 1);
+			this->localitate = bufferLocalitate;
+			delete[] bufferLocalitate;
+			g.read((char*)&this->nrProduse, sizeof(this->nrProduse));
+			this->prod = new Produs * [this->nrProduse];
+			for (int i = 0; i < this->nrProduse; i++) {
+				this->prod[i] = new Produs();
+				this->prod[i]->deserializare(g);
+			}
+			g.read((char*)&this->suprafata, sizeof(this->suprafata));
+
+			g.close();
+		}
+		else {
+			cout << "Eroare la deschiderea fisierului binar." << endl;
+		}
+	}
+
+
+
+
 };
 
+//
+//int main()
+//{
+//	Produs p1;
+//	cout << "PRODUS" << endl;
+//	cout << "---------------------------------------------" << endl;
+//	p1.afisareProdus();
+//	cout << "---------------------------------------------" << endl;
+//
+//	int* cantitateP2 = new int(10);
+//	Produs p2("Suc", cantitateP2);
+//	cout << "---------------------------------------------" << endl;
+//	p2.afisareProdus();
+//	cout << "---------------------------------------------" << endl;
+//
+//	int* cantitateP3 = new int(50);
+//	Produs p3("Ciocolata", 3.0, cantitateP3, 100002);
+//	cout << "---------------------------------------------" << endl;
+//	p3.afisareProdus();
+//	cout << "---------------------------------------------" << endl;
+//
+//	cout << "Nume produs1: " << p3.getNumeProdus() << endl;
+//	cout << "Pret produs1: " << p3.getPretProdus() << endl;
+//	cout << "Cantitate produs1: " << *p3.getCantitate() << endl;
+//
+//	cout << "---------------------------------------------" << endl;
+//
+//
+//	cout << "Op <<" << endl;
+//	cout << p1 << endl;
+//
+//
+//	cout << "---------------------------------------------" << endl;
+//	cout << "Afisare p2: " << endl;
+//	p2.afisareProdus();
+//	cout << endl;
+//
+//	cout << endl << "Op +=" << endl;
+//	cout << endl;
+//	
+//	p2 += 5;
+//	cout << p2 << endl;
+//	cout << "-------------------------" << endl;
+//
+//	cout << "-------------------------" << endl;
+//	cout << "P3 :" << endl << p3 << endl;
+//	cout << "-------------------------" << endl;
+//	cout << "P1 inainte: " << endl << p1 << endl;
+//	cout << "-------------------------" << endl;
+//	p1 = p3;
+//	cout << "P1 dupa op =  " << endl << p1 << endl;
+//	cout << "-------------------------" << endl;
+//
+//	cout << "-------------------------" << endl;
+//	cout << "P3: "<< endl << p3 << endl;
+//	cout << "-------------------------" << endl;
+//
+//	cout << "Op ++ (creste cantitatea si nr prod) " << endl;
+//	cout << "-------------------------" << endl;
+//	p3++;
+//	cout <<endl<< "P3 dupa ++ : "<< endl << p3 << endl;
+//	cout << endl << "_________________________________________________________";
+//	cout <<endl << "RAION" << endl;
+//	Raion r1;
+//	cout << "---------------------------------------------" << endl;
+//	r1.AfisareRaion();
+//	cout << "---------------------------------------------" << endl;
+//
+//	Raion r2("Electronice", 100);
+//	cout << "---------------------------------------------" << endl;
+//	r2.AfisareRaion();
+//	cout << "---------------------------------------------" << endl;
+//
+//	float venitLunar[] = { 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000 };
+//	Raion r3("Haine", 200, venitLunar, "Vestimentar");
+//	cout << "---------------------------------------------" << endl;
+//	r3.AfisareRaion();
+//	cout << "---------------------------------------------" << endl;
+//
+//	// Testare getteri si setteri pentru Raion
+//	cout << endl << "Get-eri:" << endl;
+//	cout << "Nume Raion r1: " << r1.getNumeRaion() << endl;
+//	cout << "Capacitate Raion r1: " << r1.getCapacitate() << endl;
+//	cout << "Venit Lunar Raion r1: ";
+//	for (int i = 0; i < 12; i++) {
+//		cout << r1.getVenitLunar()[i] << " ";
+//	}
+//	cout << endl;
+//	cout << "---------------------------------------------" << endl;
+//	cout << endl << "Set-eri:" << endl;
+//	r1.setNumeRaion("Raion Nou");
+//	r1.setCapacitate(150);
+//	float venitLunarNou[] = { 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000 };
+//	r1.setVenitLunar(venitLunarNou);
+//
+//	cout << "Nume Raion r1 dupa set: " << r1.getNumeRaion() << endl;
+//	cout << "Capacitate Raion r1 dupa set: " << r1.getCapacitate() << endl;
+//	cout << "Venit Lunar Raion r1 dupa set: ";
+//	for (int i = 0; i < 12; i++) {
+//		cout << r1.getVenitLunar()[i] << " ";
+//	}
+//	cout << endl;
+//	cout << "---------------------------------------------" << endl;
+//
+//	// Testare constructor de copiere pentru Raion
+//	Raion r4 = r2;
+//	cout << "---------------------------------------------" << endl;
+//	cout << "Afisare Raion r2 (original): " << endl;
+//	r2.AfisareRaion();
+//	cout << endl << endl;
+//	cout << "Afisare Raion r4 (copie): " << endl;
+//	r4.AfisareRaion();
+//	cout << "---------------------------------------------" << endl;
+//
+//	// Testare destructor pentru Raion
+//	{
+//		Raion r5("Test Destructor", 50);
+//		cout << "Raion creat in bloc" << endl;
+//	}
+//
+//	cout << "Raion dupa iesirea din bloc" << endl;
+//	cout << endl << "--------------------------------------------------";
+//
+//	cout <<endl << "CLIENT" << endl;
+//	cout << "---------------------------------------------" << endl;
+//
+//	Client c1;
+//	cout << "---------------------------------------------" << endl;
+//	c1.AfisareClient();
+//	cout << "---------------------------------------------" << endl;
+//
+//	Client c2("John Doe", 30);
+//	cout << "---------------------------------------------" << endl;
+//	c2.AfisareClient();
+//	cout << "---------------------------------------------" << endl;
+//
+//	bool* esteFidel = new bool(true);
+//	Client c3("Alice Wonderland", 25, esteFidel, "VIP");
+//	cout << "---------------------------------------------" << endl;
+//	c3.AfisareClient();
+//	cout << "---------------------------------------------" << endl;
+//
+//	// Testare getteri si setteri pentru Client
+//	cout << endl << "Get-eri:" << endl;
+//	cout << "Nume Client c1: " << c1.getNumeClient() << endl;
+//	cout << "Varsta Client c1: " << c1.getVarsta() << endl;
+//	cout << "Este Fidel Client c1: " << (*c1.getEsteFidel() ? "Da" : "Nu") << endl;
+//
+//	cout << endl << "Set-eri:"<<endl;
+//	c1.setNumeClient("Client Nou");
+//	c1.setVarsta(40);
+//	bool* esteFidelNou = new bool(false);
+//	c1.setEsteFidel(esteFidelNou);
+//
+//	cout << "Nume Client c1 dupa set: " << c1.getNumeClient() << endl;
+//	cout << "Varsta Client c1 dupa set: " << c1.getVarsta() << endl;
+//	cout << "Este Fidel Client c1 dupa set: " << (*c1.getEsteFidel() ? "Da" : "Nu") << endl;
+//
+//	// Testare constructor = pentru Client
+//	cout << "---------------------------------------------" << endl;
+//	cout << endl << "Constr =" << endl;
+//	Client c4 = c2;
+//	cout << "---------------------------------------------" << endl;
+//	cout << "Afisare Client c2 (original): " << endl;
+//	c2.AfisareClient();
+//	cout << endl << endl;
+//	cout << "Afisare Client c4 (copie): " << endl;
+//	c4.AfisareClient();
+//	cout << endl;
+//	cout << "---------------------------------------------" << endl;
+//
+//	// Testare destructor pentru Client
+//	{
+//		Client c5("Test Destructor", 30);
+//		cout << "Client creat in blocul interior" << endl;
+//	}
+//
+//	cout << "Client dupa iesirea din blocul interior" << endl;
+//
+//	cout << "---------------------------------------------" << endl;
+//
+//	cout << endl;
+//
+//	ProcesareProdus(p1);
+//	ProcesareRaion(r1);
+//	ProcesareClient(c1);
+//
+//	cout << endl;
+//
+//	cout << "---------------------------------------------" << endl;
+//	cout << "---------------------------------------------" << endl;
+//
+//
+// //Pana aici Fazele de la 1->3
+// //Faza 4
+////
+////Produs p1;
+////Produs p2;
+////Produs p3;
+////Raion r1;
+////Raion r2;
+////Raion r3;
+////Client c1; 
+////Client c2;
+////Client c3;
+//
+//	Produs produse[3] = { p1,p2,p3 };
+//	Raion raioane[3] = { r1,r2,r3 };
+//	Client clienti[3] = { c1,c2,c3 };
+//
+//	/*for (int i = 0; i < 3; i++) {
+//		cin >> produse[i];
+//		cout << endl;
+//	}
+//
+//	cout << endl << endl;
+//	for (int i = 0; i < 3; i++) {
+//		cout << "------------------------------------" << endl;
+//		cout << produse[i] << endl;
+//	}
+//	cout << endl << endl;
+//
+//	for (int i = 0; i < 3; i++) {
+//		cin >> raioane[i];
+//		cout << endl;
+//	}
+//
+//	cout << endl << endl;
+//	for (int i = 0; i < 3; i++) {
+//		cout << "------------------------------------" << endl;
+//		cout << raioane[i] << endl;
+//	}
+//
+//
+//	cout << endl << endl;
+//	cout << "------------------------------------" << endl;
+//
+//	for (int i = 0; i < 3; i++) {
+//		cin >> clienti[i];
+//		cout << endl;
+//	}
+//
+//	cout << endl << endl;
+//	for (int i = 0; i < 3; i++) {
+//
+//		cout << "------------------------------------" << endl;
+//		cout << clienti[i] << endl;
+//	}
+//	cout << "------------------------------------" << endl;*/
+//
+//	cout << "---------------------------------------------" << endl;
+//	const int nr = 2;
+//	Produs matrixProd[nr][nr];
+//
+//	cout << " Introdu elementele matricei : \n"<<endl;
+//	for (int i = 0; i < nr; ++i) {
+//		for (int j = 0; j < nr; ++j) {
+//			cin >> matrixProd[i][j];
+//		}
+//	}
+//
+//	cout <<endl << "Matricea: \n"<<endl;
+//	for (int i = 0; i < nr; ++i) {
+//		for (int j = 0; j < nr; ++j) {
+//			cout << matrixProd[i][j] << " ";
+//		}
+//		cout << endl;
+//	}
+//	cout << endl;
+//	cout << "---------------------------------------------" << endl;
+//
+//	//Faza 7
+//
+//	ProdusPerisabil pp;
+//	cout <<endl << pp << endl;
+//	cout << pp.getZiExp() << endl;
+//	cout << pp.getLunaExp() << endl;
+//	cout << pp.getAnExp() << endl;
+//	cout << endl;
+//
+//	pp.setZiExp(5);
+//	pp.setLunaExp(11);
+//	pp.setAnExp(2025);
+//
+//	cout <<endl << pp << endl;
+//
+//	cout << endl;
+//
+//	ProdusPerisabil pp1 = p1;
+//	cout << pp1 << endl;
+//
+//	ProdusPerisabil pp2 = pp;
+//	cout << pp2 << endl;
+//
+//	pp2 = pp1;
+//
+//	cout << pp2 << endl;
+//
+//
+//	//Upcasting --- conversie de la un tip derivat la un tip de bază
+//
+//	Produs* pCasting = &pp1;
+//	cout << *pCasting << endl;
+//
+//
+//	cout << "---------------------------------------------" << endl;
+//	ClientVIP cv;
+//	cout << "Client vip: " <<endl<< cv<<endl;
+//	cout << "Get-eri:" << endl;
+//	cout << cv.getNivelVIP() << endl;
+//	cout << cv.getDiscountSuma() << endl;
+//	cv.setDiscountSuma(15.5);
+//	cv.setNivelVIP(3);
+//
+//	cout <<endl<< "Client vip dupa set: "<<endl << cv << endl;
+//
+//	ClientVIP cv1 = c1;
+//	cout << cv1 << endl;
+//
+//	ClientVIP cv2 = cv;
+//	cout << cv2 << endl;
+//
+//	cv2 = cv1;
+//	cout << cv2 << endl;
+//
+//	cout << "---------------------------------------------" << endl;
+//
+//	//vector de pointeri la tipul abstract , exemplific conceptul de late-binding pentru cel puțin 10 elemente în vector
+//
+//
+//	Produs* vecPp[10] = { &p1,&pp1,&p1,&pp1, &p1,&pp1, &p1,&pp1, &p1,&pp1 };
+//	Produs* pProd = new Produs(p1);
+//	Produs* pProd1 = new ProdusPerisabil(pp1);
+//	cout << pProd->evidentaTipProdus() << endl;
+//	cout << pProd1->evidentaTipProdus() << endl;
+//	for (int i = 0; i < 10; i++) {
+//		cout << vecPp[i]->evidentaTipProdus() << endl;
+//	}
+//
+//	cout << endl << endl;
+//
+//	Client* pClient = new Client(c1);
+//	Client* pClient1 = new ClientVIP(cv1);
+//
+//	cout << pClient->evidentaTipClient() << endl;
+//	cout << pClient1->evidentaTipClient() << endl;
+//
+//	cout << "---------------------------------------------" << endl;
+////
+////
+////ProdusPerisabil pp;
+////ProdusPerisabil pp1 = p1;
+////ProdusPerisabil pp2 = pp;
+//
+//	Produs* vecProd[4] = { &p1,&pp1,&pp2,&p2 };
+//
+//
+//	//Faza 5
+//	Depozit d;
+//	cout << "Get localitate: " << endl;
+//	cout << d.getLocalitate() << endl;
+//	cout << "Get nr prod: " ;
+//	cout << d.getNrProduse() << endl;
+//	if (d.getNrProduse() > 0) {
+//		for (int i = 0; i < d.getNrProduse(); i++)
+//		{
+//			cout<< "Produse in depozit:" <<endl;
+//			cout << *(d.getProduse()[i]) << endl;
+//		}
+//	}
+//	cout << "Get suprafata: " ;
+//	cout << d.getSuprafata() << endl;
+//
+//	cout <<endl<< "Dupa set: " << endl;
+//	d.setLocalitate("Pantelimon");
+//	d.setSuprafata(4500);
+//
+//	cout << d << endl;
+//
+//	cout << endl << endl;
+//
+//	Depozit d1("Straulesti", 4, vecProd, 1500);
+//	cout << d1 << endl;
+//
+//	Depozit d2 = d;
+//	cout << d2 << endl;
+//
+//	d2 = d1;
+//	cout << d2 << endl;
+//
+//	cout << d2() << endl;
+//
+//	d2 += 1500;
+//
+//	cout << d2 << endl;
+//
+//	cout << "Produs la pozitia 2: " << d2[2] << endl;
+//	cout << "Produs la pozitia 1: " << d2[1] << endl;
+//	cout << "Produs la pozitia -1: "<< d2[-1] << endl;
+//	cout << "Produs la pozitia 11: "<< d2[11] << endl << endl;
+//
+//	cout << "Tipuri de produse in depozit:" << endl;
+//	for (int i = 0; i < d2.getNrProduse(); i++) {
+//		cout << d2.getProduse()[i]->evidentaTipProdus() << endl;
+//	}
+//
+//	cout << "---------------------------------------------" << endl;
+//
+//	return 0;
+//}
 
-int main()
-{
+int main() {
 	Produs p1;
-	cout << "PRODUS" << endl;
-	cout << "---------------------------------------------" << endl;
-	p1.afisareProdus();
-	cout << "---------------------------------------------" << endl;
-
 	int* cantitateP2 = new int(10);
 	Produs p2("Suc", cantitateP2);
-	cout << "---------------------------------------------" << endl;
-	p2.afisareProdus();
-	cout << "---------------------------------------------" << endl;
-
 	int* cantitateP3 = new int(50);
 	Produs p3("Ciocolata", 3.0, cantitateP3, 100002);
-	cout << "---------------------------------------------" << endl;
-	p3.afisareProdus();
-	cout << "---------------------------------------------" << endl;
 
-	cout << "Nume produs1: " << p3.getNumeProdus() << endl;
-	cout << "Pret produs1: " << p3.getPretProdus() << endl;
-	cout << "Cantitate produs1: " << *p3.getCantitate() << endl;
-
-	cout << "---------------------------------------------" << endl;
-
-
-	cout << "Op <<" << endl;
-	cout << p1 << endl;
-
-
-	cout << "---------------------------------------------" << endl;
-	cout << "Afisare p2: " << endl;
-	p2.afisareProdus();
-	cout << endl;
-
-	cout << endl << "Op +=" << endl;
-	cout << endl;
-
-	p2 += 5;
-	cout << p2 << endl;
-	cout << "-------------------------" << endl;
-
-	cout << "-------------------------" << endl;
-	cout << "P3 :" << endl << p3 << endl;
-	cout << "-------------------------" << endl;
-	cout << "P1 inainte: " << endl << p1 << endl;
-	cout << "-------------------------" << endl;
-	p1 = p3;
-	cout << "P1 dupa op =  " << endl << p1 << endl;
-	cout << "-------------------------" << endl;
-
-	cout << "-------------------------" << endl;
-	cout << "P3: " << endl << p3 << endl;
-	cout << "-------------------------" << endl;
-
-	cout << "Op ++ (creste cantitatea si nr prod) " << endl;
-	cout << "-------------------------" << endl;
-	p3++;
-	cout << endl << "P3 dupa ++ : " << endl << p3 << endl;
-	cout << endl << "_________________________________________________________";
-	cout << endl << "RAION" << endl;
 	Raion r1;
-	cout << "---------------------------------------------" << endl;
-	r1.AfisareRaion();
-	cout << "---------------------------------------------" << endl;
-
 	Raion r2("Electronice", 100);
-	cout << "---------------------------------------------" << endl;
-	r2.AfisareRaion();
-	cout << "---------------------------------------------" << endl;
-
 	float venitLunar[] = { 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000, 14000, 15000, 16000 };
 	Raion r3("Haine", 200, venitLunar, "Vestimentar");
-	cout << "---------------------------------------------" << endl;
-	r3.AfisareRaion();
-	cout << "---------------------------------------------" << endl;
 
-	// Testare getteri si setteri pentru Raion
-	cout << endl << "Get-eri:" << endl;
-	cout << "Nume Raion r1: " << r1.getNumeRaion() << endl;
-	cout << "Capacitate Raion r1: " << r1.getCapacitate() << endl;
-	cout << "Venit Lunar Raion r1: ";
-	for (int i = 0; i < 12; i++) {
-		cout << r1.getVenitLunar()[i] << " ";
-	}
-	cout << endl;
-	cout << "---------------------------------------------" << endl;
-	cout << endl << "Set-eri:" << endl;
-	r1.setNumeRaion("Raion Nou");
-	r1.setCapacitate(150);
-	float venitLunarNou[] = { 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 11000, 12000, 13000 };
-	r1.setVenitLunar(venitLunarNou);
-
-	cout << "Nume Raion r1 dupa set: " << r1.getNumeRaion() << endl;
-	cout << "Capacitate Raion r1 dupa set: " << r1.getCapacitate() << endl;
-	cout << "Venit Lunar Raion r1 dupa set: ";
-	for (int i = 0; i < 12; i++) {
-		cout << r1.getVenitLunar()[i] << " ";
-	}
-	cout << endl;
-	cout << "---------------------------------------------" << endl;
-
-	// Testare constructor de copiere pentru Raion
-	Raion r4 = r2;
-	cout << "---------------------------------------------" << endl;
-	cout << "Afisare Raion r2 (original): " << endl;
-	r2.AfisareRaion();
-	cout << endl << endl;
-	cout << "Afisare Raion r4 (copie): " << endl;
-	r4.AfisareRaion();
-	cout << "---------------------------------------------" << endl;
-
-	// Testare destructor pentru Raion
-	{
-		Raion r5("Test Destructor", 50);
-		cout << "Raion creat in bloc" << endl;
-	}
-
-	cout << "Raion dupa iesirea din bloc" << endl;
-	cout << endl << "--------------------------------------------------";
-
-	cout << endl << "CLIENT" << endl;
-	cout << "---------------------------------------------" << endl;
 
 	Client c1;
-	cout << "---------------------------------------------" << endl;
-	c1.AfisareClient();
-	cout << "---------------------------------------------" << endl;
-
 	Client c2("John Doe", 30);
-	cout << "---------------------------------------------" << endl;
-	c2.AfisareClient();
-	cout << "---------------------------------------------" << endl;
-
 	bool* esteFidel = new bool(true);
 	Client c3("Alice Wonderland", 25, esteFidel, "VIP");
-	cout << "---------------------------------------------" << endl;
-	c3.AfisareClient();
-	cout << "---------------------------------------------" << endl;
-
-	// Testare getteri si setteri pentru Client
-	cout << endl << "Get-eri:" << endl;
-	cout << "Nume Client c1: " << c1.getNumeClient() << endl;
-	cout << "Varsta Client c1: " << c1.getVarsta() << endl;
-	cout << "Este Fidel Client c1: " << (*c1.getEsteFidel() ? "Da" : "Nu") << endl;
-
-	cout << endl << "Set-eri:" << endl;
-	c1.setNumeClient("Client Nou");
-	c1.setVarsta(40);
-	bool* esteFidelNou = new bool(false);
-	c1.setEsteFidel(esteFidelNou);
-
-	cout << "Nume Client c1 dupa set: " << c1.getNumeClient() << endl;
-	cout << "Varsta Client c1 dupa set: " << c1.getVarsta() << endl;
-	cout << "Este Fidel Client c1 dupa set: " << (*c1.getEsteFidel() ? "Da" : "Nu") << endl;
-
-	// Testare constructor = pentru Client
-	cout << "---------------------------------------------" << endl;
-	cout << endl << "Constr =" << endl;
-	Client c4 = c2;
-	cout << "---------------------------------------------" << endl;
-	cout << "Afisare Client c2 (original): " << endl;
-	c2.AfisareClient();
-	cout << endl << endl;
-	cout << "Afisare Client c4 (copie): " << endl;
-	c4.AfisareClient();
-	cout << endl;
-	cout << "---------------------------------------------" << endl;
-
-	// Testare destructor pentru Client
-	{
-		Client c5("Test Destructor", 30);
-		cout << "Client creat in blocul interior" << endl;
-	}
-
-	cout << "Client dupa iesirea din blocul interior" << endl;
-
-	cout << "---------------------------------------------" << endl;
-
-	cout << endl;
-
-	ProcesareProdus(p1);
-	ProcesareRaion(r1);
-	ProcesareClient(c1);
-
-	cout << endl;
-
-	cout << "---------------------------------------------" << endl;
-	cout << "---------------------------------------------" << endl;
-
-
-	//Pana aici Fazele de la 1->3
-	//Faza 4
-   //
-   //Produs p1;
-   //Produs p2;
-   //Produs p3;
-   //Raion r1;
-   //Raion r2;
-   //Raion r3;
-   //Client c1; 
-   //Client c2;
-   //Client c3;
-
-	Produs produse[3] = { p1,p2,p3 };
-	Raion raioane[3] = { r1,r2,r3 };
-	Client clienti[3] = { c1,c2,c3 };
-
-	for (int i = 0; i < 3; i++) {
-		cin >> produse[i];
-		cout << endl;
-	}
-
-	cout << endl << endl;
-	for (int i = 0; i < 3; i++) {
-		cout << "------------------------------------" << endl;
-		cout << produse[i] << endl;
-	}
-	cout << endl << endl;
-
-	for (int i = 0; i < 3; i++) {
-		cin >> raioane[i];
-		cout << endl;
-	}
-
-	cout << endl << endl;
-	for (int i = 0; i < 3; i++) {
-		cout << "------------------------------------" << endl;
-		cout << raioane[i] << endl;
-	}
-
-
-	cout << endl << endl;
-	cout << "------------------------------------" << endl;
-
-	for (int i = 0; i < 3; i++) {
-		cin >> clienti[i];
-		cout << endl;
-	}
-
-	cout << endl << endl;
-	for (int i = 0; i < 3; i++) {
-
-		cout << "------------------------------------" << endl;
-		cout << clienti[i] << endl;
-	}
-	cout << "------------------------------------" << endl;
-
-	cout << "---------------------------------------------" << endl;
-	const int nr = 2;
-	Produs matrixProd[nr][nr];
-
-	cout << " Introdu elementele matricei : \n" << endl;
-	for (int i = 0; i < nr; ++i) {
-		for (int j = 0; j < nr; ++j) {
-			cin >> matrixProd[i][j];
-		}
-	}
-
-	cout << endl << "Matricea: \n" << endl;
-	for (int i = 0; i < nr; ++i) {
-		for (int j = 0; j < nr; ++j) {
-			cout << matrixProd[i][j] << " ";
-		}
-		cout << endl;
-	}
-	cout << endl;
-	cout << "---------------------------------------------" << endl;
-
-	//Faza 7
 
 	ProdusPerisabil pp;
-	cout << endl << pp << endl;
-	cout << pp.getZiExp() << endl;
-	cout << pp.getLunaExp() << endl;
-	cout << pp.getAnExp() << endl;
-	cout << endl;
-
-	pp.setZiExp(5);
-	pp.setLunaExp(11);
-	pp.setAnExp(2025);
-
-	cout << endl << pp << endl;
-
-	cout << endl;
-
 	ProdusPerisabil pp1 = p1;
-	cout << pp1 << endl;
-
 	ProdusPerisabil pp2 = pp;
-	cout << pp2 << endl;
-
-	pp2 = pp1;
-
-	cout << pp2 << endl;
-
-
-	//Upcasting --- conversie de la un tip derivat la un tip de bază
-
-	Produs* pCasting = &pp1;
-	cout << *pCasting << endl;
-
-
-	cout << "---------------------------------------------" << endl;
-	ClientVIP cv;
-	cout << "Client vip: " << endl << cv << endl;
-	cout << "Get-eri:" << endl;
-	cout << cv.getNivelVIP() << endl;
-	cout << cv.getDiscountSuma() << endl;
-	cv.setDiscountSuma(15.5);
-	cv.setNivelVIP(3);
-
-	cout << endl << "Client vip dupa set: " << endl << cv << endl;
-
-	ClientVIP cv1 = c1;
-	cout << cv1 << endl;
-
-	ClientVIP cv2 = cv;
-	cout << cv2 << endl;
-
-	cv2 = cv1;
-	cout << cv2 << endl;
-
-	cout << "---------------------------------------------" << endl;
-
-	//vector de pointeri la tipul abstract , exemplific conceptul de late-binding pentru cel puțin 10 elemente în vector
-
-
-	Produs* vecPp[10] = { &p1,&pp1,&p1,&pp1, &p1,&pp1, &p1,&pp1, &p1,&pp1 };
-	Produs* pProd = new Produs(p1);
-	Produs* pProd1 = new ProdusPerisabil(pp1);
-	cout << pProd->evidentaTipProdus() << endl;
-	cout << pProd1->evidentaTipProdus() << endl;
-	for (int i = 0; i < 10; i++) {
-		cout << vecPp[i]->evidentaTipProdus() << endl;
-	}
-
-	cout << endl << endl;
-
-	Client* pClient = new Client(c1);
-	Client* pClient1 = new ClientVIP(cv1);
-
-	cout << pClient->evidentaTipClient() << endl;
-	cout << pClient1->evidentaTipClient() << endl;
-
-	cout << "---------------------------------------------" << endl;
-	//
-	//
-	//ProdusPerisabil pp;
-	//ProdusPerisabil pp1 = p1;
-	//ProdusPerisabil pp2 = pp;
 
 	Produs* vecProd[4] = { &p1,&pp1,&pp2,&p2 };
-
-
-	//Faza 5
 	Depozit d;
-	cout << "Get localitate: " << endl;
-	cout << d.getLocalitate() << endl;
-	cout << "Get nr prod: ";
-	cout << d.getNrProduse() << endl;
 	if (d.getNrProduse() > 0) {
 		for (int i = 0; i < d.getNrProduse(); i++)
 		{
@@ -1282,43 +1473,72 @@ int main()
 			cout << *(d.getProduse()[i]) << endl;
 		}
 	}
-	cout << "Get suprafata: ";
-	cout << d.getSuprafata() << endl;
-
-	cout << endl << "Dupa set: " << endl;
-	d.setLocalitate("Pantelimon");
-	d.setSuprafata(4500);
-
-	cout << d << endl;
-
-	cout << endl << endl;
-
 	Depozit d1("Straulesti", 4, vecProd, 1500);
-	cout << d1 << endl;
-
 	Depozit d2 = d;
-	cout << d2 << endl;
 
-	d2 = d1;
-	cout << d2 << endl;
 
-	cout << d2() << endl;
+	cout << "Fisiere text (Exportare/Scriere in fisier text)" << endl;
+	ofstream f("produse.txt", ios::out);
+	f << p3 << endl;
+	f.close();
+	cout << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
 
-	d2 += 1500;
+	cout << "Fisiere text (Citire din fisier text)" << endl;
+	cout << p2 << endl;
+	ifstream g("produse.txt", ios::in);
+	g >> p2;
+	g.close();
+	cout << p2;
 
-	cout << d2 << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
 
-	cout << "Produs la pozitia 2: " << d2[2] << endl;
-	cout << "Produs la pozitia 1: " << d2[1] << endl;
-	cout << "Produs la pozitia -1: " << d2[-1] << endl;
-	cout << "Produs la pozitia 11: " << d2[11] << endl << endl;
+	cout << "Fisiere text (Exportare/Scriere in fisier text)" << endl;
+	ofstream h("raioane.txt", ios::out);
+	h << r2 << endl;
+	h.close();
+	cout << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
 
-	cout << "Tipuri de produse in depozit:" << endl;
-	for (int i = 0; i < d2.getNrProduse(); i++) {
-		cout << d2.getProduse()[i]->evidentaTipProdus() << endl;
-	}
+	cout << "Fisiere text (Citire din fisier text)" << endl;
+	cout << r2 << endl;
+	ifstream i("raioane.txt", ios::in);
+	i >> r2;
+	i.close();
+	cout << r2 << endl;
 
-	cout << "---------------------------------------------" << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
 
-	return 0;
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+
+	cout << "Serializare Fisiere binare (Exportare/Scriere in fisier binar)" << endl;
+	c2.serializare("serializareClient");
+	d1.serializare("serializareDepozit");
+
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+
+	cout << "Deserializare Fisiere binare (Scriere din fisier binar)" << endl;
+	Client cBinar;
+	cout << cBinar << endl << endl;
+	cBinar.deserializare("deserializareClient.bin");
+	cout << cBinar << endl << endl;
+
+	cout << "-------------------------------------------------" << endl << endl;
+	cout << "-------------------------------------------------" << endl << endl;
+
+	cout << "Deserializare Fisiere binare (Scriere din fisier binar)" << endl;
+	Depozit dBinar;
+	cout << dBinar << endl << endl;
+	dBinar.deserializare("deserializareDepozit.bin");
+	cout << dBinar << endl << endl;
+
+
 }
